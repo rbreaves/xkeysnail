@@ -33,11 +33,11 @@ def is_keyboard_device(device):
 
 
 def print_device_list(devices):
-    device_format = '{1.fn:<20} {1.name:<35} {1.phys}'
-    device_lines = [device_format.format(n, d) for n, d in enumerate(devices)]
-    print('-' * len(max(device_lines, key=len)))
-    print('{:<20} {:<35} {}'.format('Device', 'Name', 'Phys'))
-    print('-' * len(max(device_lines, key=len)))
+    device_format = '{:<20} {:<35} {:<15} (fd={})' # Modified format string for path and fd
+    print('-' * (20 + 35 + 15 + 10)) # Adjust separator length
+    print('{:<20} {:<35} {:<15} {}'.format('Path', 'Name', 'Phys', 'FD')) # Adjusted header
+    print('-' * (20 + 35 + 15 + 10)) # Adjust separator length
+    device_lines = [device_format.format(d.path, d.name, d.phys, d.fd) for n, d in enumerate(devices)]
     print('\n'.join(device_lines))
     print('')
 
@@ -54,7 +54,7 @@ class DeviceFilter(object):
         # Match by device path or name, if no keyboard devices specified, picks up keyboard-ish devices.
         if self.matches:
             for match in self.matches:
-                if device.fn == match or device.name == match:
+                if device.path == match or device.name == match: # Use .path instead of .fn
                     return True
             return False
         # Exclude none keyboard devices
@@ -92,7 +92,7 @@ xkeysnail picks up keyboard-ish devices from the list below:
 
 def in_device_list(fn, devices):
     for device in devices:
-        if device.fn == fn:
+        if device.path == fn: # Use .path instead of .fn
             return True
     return False
 
@@ -157,7 +157,7 @@ def add_new_device(devices, device_filter, inotify):
     new_devices = []
     for event in inotify.read():
         new_device = InputDevice("/dev/input/" + event.name)
-        if device_filter(new_device) and not in_device_list(new_device.fn, devices):
+        if device_filter(new_device) and not in_device_list(new_device.path, devices): # Use .path instead of .fn
             try:
                 new_device.grab()
             except IOError:
